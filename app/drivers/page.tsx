@@ -2,7 +2,8 @@
 
 import { useEffect, useState } from "react";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
-import { Loader2Icon, PencilIcon, PlusIcon, Trash2Icon } from "lucide-react";
+import { PencilIcon, PlusIcon, Trash2Icon } from "lucide-react";
+import { Skeleton } from "@/components/ui/skeleton";
 import { toast } from "sonner";
 
 import { Button } from "@/components/ui/button";
@@ -228,9 +229,35 @@ export default function DriversPage() {
 
       {/* Table */}
       {isLoading ? (
-        <div className="flex items-center gap-2 py-12 justify-center text-sm text-muted-foreground">
-          <Loader2Icon className="h-5 w-5 animate-spin" />
-          Loading drivers…
+        <div className="rounded-xl border">
+          <Table>
+            <TableHeader>
+              <TableRow>
+                <TableHead>Name</TableHead>
+                <TableHead>Phone</TableHead>
+                <TableHead>Truck Plate</TableHead>
+                <TableHead className="w-20" />
+              </TableRow>
+            </TableHeader>
+            <TableBody>
+              {Array.from({ length: 5 }).map((_, i) => (
+                <TableRow key={i}>
+                  <TableCell>
+                    <Skeleton className="h-4 w-32" />
+                  </TableCell>
+                  <TableCell>
+                    <Skeleton className="h-4 w-36" />
+                  </TableCell>
+                  <TableCell>
+                    <Skeleton className="h-4 w-20" />
+                  </TableCell>
+                  <TableCell>
+                    <Skeleton className="h-7 w-16" />
+                  </TableCell>
+                </TableRow>
+              ))}
+            </TableBody>
+          </Table>
         </div>
       ) : isError ? (
         <div className="rounded-xl border border-destructive/30 bg-destructive/10 p-8 text-center">
@@ -279,6 +306,7 @@ export default function DriversPage() {
                         variant="ghost"
                         size="icon-sm"
                         onClick={() => setModalState({ open: true, driver })}
+                        disabled={deleteMutation.isPending}
                         aria-label={`Edit ${driver.full_name}`}
                       >
                         <PencilIcon />
@@ -288,6 +316,7 @@ export default function DriversPage() {
                         size="icon-sm"
                         className="text-destructive hover:text-destructive"
                         onClick={() => setDeleteId(driver.id)}
+                        disabled={deleteMutation.isPending}
                         aria-label={`Delete ${driver.full_name}`}
                       >
                         <Trash2Icon />

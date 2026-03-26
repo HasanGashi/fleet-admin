@@ -46,6 +46,7 @@ type Order = {
   status: string;
   driver_id: string | null;
   drivers: { full_name: string } | null;
+  proof_photo_url: string | null;
 };
 
 type Driver = {

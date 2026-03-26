@@ -32,6 +32,7 @@ type Driver = {
   phone: string | null;
   truck_plate: string | null;
   expo_push_token: string | null;
+  is_available: boolean;
 };
 
 type DriverFormData = {

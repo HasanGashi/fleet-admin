@@ -2,13 +2,9 @@
 
 import { useEffect, useState } from "react";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
-import {
-  Loader2Icon,
-  PencilIcon,
-  PlusIcon,
-  Trash2Icon,
-  UserCheckIcon,
-} from "lucide-react";
+import { PencilIcon, PlusIcon, Trash2Icon, UserCheckIcon } from "lucide-react";
+
+import { Skeleton } from "@/components/ui/skeleton";
 import { toast } from "sonner";
 
 import { Badge } from "@/components/ui/badge";
@@ -27,7 +23,6 @@ import {
   SelectContent,
   SelectItem,
   SelectTrigger,
-  SelectValue,
 } from "@/components/ui/select";
 import {
   Table,
@@ -38,6 +33,7 @@ import {
   TableRow,
 } from "@/components/ui/table";
 import { supabase } from "@/lib/supabase";
+import { AddressAutocomplete } from "@/components/address-autocomplete";
 
 type Order = {
   id: string;
@@ -196,7 +192,16 @@ function AssignOrderModal({
             onValueChange={(v) => setSelectedDriverId(v ?? "")}
           >
             <SelectTrigger>
-              <SelectValue placeholder="Select driver…" />
+              <span
+                className={
+                  selectedDriverId ? undefined : "text-muted-foreground"
+                }
+              >
+                {selectedDriverId
+                  ? (drivers.find((d) => d.id === selectedDriverId)
+                      ?.full_name ?? "Select driver…")
+                  : "Select driver…"}
+              </span>
             </SelectTrigger>
             <SelectContent>
               {drivers.map((d) => (
@@ -318,13 +323,12 @@ function CreateEditOrderModal({
               <label className="text-sm font-medium" htmlFor="pickup_address">
                 Pickup Address
               </label>
-              <Input
+              <AddressAutocomplete
                 id="pickup_address"
-                placeholder="Rue de la Paix, Lyon"
+                placeholder="Viale Europa Unita 32, Pozzuolo del Friuli"
                 value={form.pickup_address}
-                onChange={(e) =>
-                  setForm((f) => ({ ...f, pickup_address: e.target.value }))
-                }
+                onChange={(v) => setForm((f) => ({ ...f, pickup_address: v }))}
+                disabled={mutation.isPending}
               />
             </div>
 
@@ -332,13 +336,14 @@ function CreateEditOrderModal({
               <label className="text-sm font-medium" htmlFor="delivery_address">
                 Delivery Address
               </label>
-              <Input
+              <AddressAutocomplete
                 id="delivery_address"
-                placeholder="Zone Industrielle, Marseille"
+                placeholder="Via Ivan Trinko 10, Udine"
                 value={form.delivery_address}
-                onChange={(e) =>
-                  setForm((f) => ({ ...f, delivery_address: e.target.value }))
+                onChange={(v) =>
+                  setForm((f) => ({ ...f, delivery_address: v }))
                 }
+                disabled={mutation.isPending}
               />
             </div>
 
@@ -496,7 +501,10 @@ export default function OrdersPage() {
           onValueChange={(v) => setStatusFilter(v ?? "all")}
         >
           <SelectTrigger>
-            <SelectValue />
+            <span>
+              {STATUS_FILTER_OPTIONS.find((o) => o.value === statusFilter)
+                ?.label ?? "All Statuses"}
+            </span>
           </SelectTrigger>
           <SelectContent>
             {STATUS_FILTER_OPTIONS.map((opt) => (
@@ -510,9 +518,39 @@ export default function OrdersPage() {
 
       {/* Table */}
       {isLoading ? (
-        <div className="flex items-center gap-2 py-12 justify-center text-sm text-muted-foreground">
-          <Loader2Icon className="h-5 w-5 animate-spin" />
-          Loading orders…
+        <div className="rounded-xl border">
+          <Table>
+            <TableHeader>
+              <TableRow>
+                <TableHead className="w-20">#</TableHead>
+                <TableHead>Driver</TableHead>
+                <TableHead>Route</TableHead>
+                <TableHead>Status</TableHead>
+                <TableHead className="w-20" />
+              </TableRow>
+            </TableHeader>
+            <TableBody>
+              {Array.from({ length: 5 }).map((_, i) => (
+                <TableRow key={i}>
+                  <TableCell>
+                    <Skeleton className="h-4 w-12" />
+                  </TableCell>
+                  <TableCell>
+                    <Skeleton className="h-4 w-28" />
+                  </TableCell>
+                  <TableCell>
+                    <Skeleton className="h-4 w-72" />
+                  </TableCell>
+                  <TableCell>
+                    <Skeleton className="h-5 w-20 rounded-full" />
+                  </TableCell>
+                  <TableCell>
+                    <Skeleton className="h-7 w-16" />
+                  </TableCell>
+                </TableRow>
+              ))}
+            </TableBody>
+          </Table>
         </div>
       ) : isError ? (
         <div className="rounded-xl border border-destructive/30 bg-destructive/10 p-8 text-center">
@@ -576,6 +614,7 @@ export default function OrdersPage() {
                           variant="ghost"
                           size="icon-sm"
                           onClick={() => setAssignState({ open: true, order })}
+                          disabled={deleteMutation.isPending}
                           aria-label={`Assign order ${orderNum(order.id)}`}
                         >
                           <UserCheckIcon />
@@ -585,6 +624,7 @@ export default function OrdersPage() {
                         variant="ghost"
                         size="icon-sm"
                         onClick={() => setModalState({ open: true, order })}
+                        disabled={deleteMutation.isPending}
                         aria-label={`Edit order ${orderNum(order.id)}`}
                       >
                         <PencilIcon />
@@ -594,6 +634,7 @@ export default function OrdersPage() {
                         size="icon-sm"
                         className="text-destructive hover:text-destructive"
                         onClick={() => setDeleteId(order.id)}
+                        disabled={deleteMutation.isPending}
                         aria-label={`Delete order ${orderNum(order.id)}`}
                       >
                         <Trash2Icon />

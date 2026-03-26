@@ -2,7 +2,13 @@
 
 import { useEffect, useState } from "react";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
-import { PencilIcon, PlusIcon, Trash2Icon, UserCheckIcon } from "lucide-react";
+import {
+  CameraIcon,
+  PencilIcon,
+  PlusIcon,
+  Trash2Icon,
+  UserCheckIcon,
+} from "lucide-react";
 
 import { Skeleton } from "@/components/ui/skeleton";
 import { toast } from "sonner";
@@ -429,6 +435,7 @@ export default function OrdersPage() {
     open: boolean;
     order?: Order;
   }>({ open: false });
+  const [proofPhotoUrl, setProofPhotoUrl] = useState<string | null>(null);
 
   const {
     data: orders = [],
@@ -476,6 +483,23 @@ export default function OrdersPage() {
     },
     onError: (err) => {
       toast.error(`Delete failed: ${(err as Error).message}`);
+    },
+  });
+
+  const statusMutation = useMutation({
+    mutationFn: async ({ id, status }: { id: string; status: string }) => {
+      const { error } = await supabase
+        .from("orders")
+        .update({ status })
+        .eq("id", id);
+      if (error) throw error;
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["orders"] });
+      toast.success("Status updated");
+    },
+    onError: (err) => {
+      toast.error(`Failed to update status: ${(err as Error).message}`);
     },
   });
 
@@ -604,9 +628,44 @@ export default function OrdersPage() {
                     <span>{order.delivery_address}</span>
                   </TableCell>
                   <TableCell>
-                    <Badge className={statusBadgeClass(order.status)}>
-                      {statusLabel(order.status)}
-                    </Badge>
+                    <div className="flex items-center gap-1.5">
+                      <Select
+                        value={order.status}
+                        onValueChange={(v) =>
+                          v &&
+                          statusMutation.mutate({ id: order.id, status: v })
+                        }
+                        disabled={statusMutation.isPending}
+                      >
+                        <SelectTrigger className="h-auto w-auto border-0 bg-transparent p-0 shadow-none focus:ring-0 [&>svg]:hidden">
+                          <Badge className={statusBadgeClass(order.status)}>
+                            {statusLabel(order.status)}
+                          </Badge>
+                        </SelectTrigger>
+                        <SelectContent>
+                          {STATUS_FILTER_OPTIONS.filter(
+                            (o) => o.value !== "all",
+                          ).map((opt) => (
+                            <SelectItem key={opt.value} value={opt.value}>
+                              {opt.label}
+                            </SelectItem>
+                          ))}
+                        </SelectContent>
+                      </Select>
+                      {order.status === "delivered" &&
+                        order.proof_photo_url && (
+                          <button
+                            type="button"
+                            onClick={() =>
+                              setProofPhotoUrl(order.proof_photo_url!)
+                            }
+                            className="text-muted-foreground hover:text-foreground transition-colors"
+                            aria-label="View proof photo"
+                          >
+                            <CameraIcon className="h-3.5 w-3.5" />
+                          </button>
+                        )}
+                    </div>
                   </TableCell>
                   <TableCell>
                     <div className="flex gap-1">
@@ -662,6 +721,26 @@ export default function OrdersPage() {
         onClose={() => setModalState({ open: false })}
         order={modalState.order}
       />
+
+      {/* Proof Photo Lightbox */}
+      <Dialog
+        open={proofPhotoUrl !== null}
+        onOpenChange={(isOpen) => !isOpen && setProofPhotoUrl(null)}
+      >
+        <DialogContent className="max-w-2xl">
+          <DialogHeader>
+            <DialogTitle>Delivery Proof Photo</DialogTitle>
+          </DialogHeader>
+          {proofPhotoUrl && (
+            // eslint-disable-next-line @next/next/no-img-element
+            <img
+              src={proofPhotoUrl}
+              alt="Delivery proof"
+              className="w-full rounded-lg object-contain max-h-[70vh]"
+            />
+          )}
+        </DialogContent>
+      </Dialog>
 
       {/* Delete Confirmation */}
       <Dialog

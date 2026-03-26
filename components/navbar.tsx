@@ -12,6 +12,7 @@ import {
   Truck,
   Map,
   History,
+  BarChart2,
 } from "lucide-react";
 
 const navItems = [
@@ -24,6 +25,12 @@ const navItems = [
   { href: "/drivers", label: "Drivers", icon: Users, match: ["/drivers"] },
   { href: "/map", label: "Map", icon: Map, match: ["/map"] },
   { href: "/history", label: "History", icon: History, match: ["/history"] },
+  {
+    href: "/analytics",
+    label: "Analytics",
+    icon: BarChart2,
+    match: ["/analytics"],
+  },
 ];
 
 export function Navbar() {

@@ -4,7 +4,15 @@ import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { useState } from "react";
 import { cn } from "@/lib/utils";
-import { ClipboardList, Users, Menu, X, Truck, Map } from "lucide-react";
+import {
+  ClipboardList,
+  Users,
+  Menu,
+  X,
+  Truck,
+  Map,
+  History,
+} from "lucide-react";
 
 const navItems = [
   {
@@ -15,6 +23,7 @@ const navItems = [
   },
   { href: "/drivers", label: "Drivers", icon: Users, match: ["/drivers"] },
   { href: "/map", label: "Map", icon: Map, match: ["/map"] },
+  { href: "/history", label: "History", icon: History, match: ["/history"] },
 ];
 
 export function Navbar() {

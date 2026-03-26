@@ -51,7 +51,7 @@ type Order = {
   notes: string | null;
   status: string;
   driver_id: string | null;
-  drivers: { full_name: string } | null;
+  drivers: { full_name: string; is_available: boolean } | null;
   proof_photo_url: string | null;
 };
 
@@ -59,6 +59,7 @@ type Driver = {
   id: string;
   full_name: string;
   expo_push_token: string | null;
+  is_available: boolean;
 };
 
 type OrderFormData = {
@@ -126,7 +127,7 @@ function AssignOrderModal({
     queryFn: async () => {
       const { data, error } = await supabase
         .from("drivers")
-        .select("id, full_name, expo_push_token")
+        .select("id, full_name, expo_push_token, is_available")
         .order("full_name");
       if (error) throw error;
       return data as Driver[];
@@ -211,11 +212,13 @@ function AssignOrderModal({
               </span>
             </SelectTrigger>
             <SelectContent>
-              {drivers.map((d) => (
-                <SelectItem key={d.id} value={d.id}>
-                  {d.full_name}
-                </SelectItem>
-              ))}
+              {drivers
+                .filter((d) => d.is_available)
+                .map((d) => (
+                  <SelectItem key={d.id} value={d.id}>
+                    {d.full_name}
+                  </SelectItem>
+                ))}
             </SelectContent>
           </Select>
         </div>
@@ -447,7 +450,7 @@ export default function OrdersPage() {
     queryFn: async () => {
       const { data, error } = await supabase
         .from("orders")
-        .select("*, drivers(full_name)")
+        .select("*, drivers(full_name, is_available)")
         .order("created_at", { ascending: false });
       if (error) throw error;
       return data as Order[];
@@ -621,7 +624,16 @@ export default function OrdersPage() {
                   <TableCell className="font-mono text-xs text-muted-foreground">
                     {orderNum(order.id)}
                   </TableCell>
-                  <TableCell>{order.drivers?.full_name ?? "—"}</TableCell>
+                  <TableCell>
+                    <span className="flex items-center gap-1.5">
+                      {order.drivers?.full_name ?? "—"}
+                      {order.drivers && !order.drivers.is_available && (
+                        <Badge className="bg-red-100 text-red-700 dark:bg-red-900/30 dark:text-red-400 text-xs py-0">
+                          Unavailable
+                        </Badge>
+                      )}
+                    </span>
+                  </TableCell>
                   <TableCell>
                     <span className="font-medium">{order.pickup_address}</span>
                     <span className="text-muted-foreground"> → </span>

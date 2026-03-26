@@ -25,6 +25,7 @@ import {
   TableRow,
 } from "@/components/ui/table";
 import { supabase } from "@/lib/supabase";
+import { cn } from "@/lib/utils";
 
 type Driver = {
   id: string;
@@ -217,6 +218,28 @@ export default function DriversPage() {
     },
   });
 
+  const availabilityMutation = useMutation({
+    mutationFn: async ({
+      id,
+      is_available,
+    }: {
+      id: string;
+      is_available: boolean;
+    }) => {
+      const { error } = await supabase
+        .from("drivers")
+        .update({ is_available })
+        .eq("id", id);
+      if (error) throw error;
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["drivers"] });
+    },
+    onError: (err) => {
+      toast.error(`Failed to update availability: ${(err as Error).message}`);
+    },
+  });
+
   return (
     <div className="mx-auto max-w-7xl px-4 py-8 sm:px-6 lg:px-8">
       {/* Header */}
@@ -237,6 +260,7 @@ export default function DriversPage() {
                 <TableHead>Name</TableHead>
                 <TableHead>Phone</TableHead>
                 <TableHead>Truck Plate</TableHead>
+                <TableHead className="w-24">Available</TableHead>
                 <TableHead className="w-20" />
               </TableRow>
             </TableHeader>
@@ -253,6 +277,11 @@ export default function DriversPage() {
                     <Skeleton className="h-4 w-20" />
                   </TableCell>
                   <TableCell>
+                    {" "}
+                    <Skeleton className="h-5 w-9 rounded-full" />
+                  </TableCell>
+                  <TableCell>
+                    {" "}
                     <Skeleton className="h-7 w-16" />
                   </TableCell>
                 </TableRow>
@@ -290,6 +319,7 @@ export default function DriversPage() {
                 <TableHead>Name</TableHead>
                 <TableHead>Phone</TableHead>
                 <TableHead>Truck Plate</TableHead>
+                <TableHead className="w-24">Available</TableHead>
                 <TableHead className="w-20" />
               </TableRow>
             </TableHeader>
@@ -301,6 +331,38 @@ export default function DriversPage() {
                   </TableCell>
                   <TableCell>{driver.phone ?? "—"}</TableCell>
                   <TableCell>{driver.truck_plate ?? "—"}</TableCell>
+                  <TableCell>
+                    <button
+                      type="button"
+                      onClick={() =>
+                        availabilityMutation.mutate({
+                          id: driver.id,
+                          is_available: !driver.is_available,
+                        })
+                      }
+                      disabled={availabilityMutation.isPending}
+                      aria-label={
+                        driver.is_available
+                          ? "Mark unavailable"
+                          : "Mark available"
+                      }
+                      className={cn(
+                        "relative inline-flex h-5 w-9 cursor-pointer rounded-full border-2 border-transparent transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring disabled:cursor-not-allowed disabled:opacity-50",
+                        driver.is_available
+                          ? "bg-green-500"
+                          : "bg-muted-foreground/30",
+                      )}
+                    >
+                      <span
+                        className={cn(
+                          "pointer-events-none inline-block h-4 w-4 rounded-full bg-white shadow-lg transition-transform",
+                          driver.is_available
+                            ? "translate-x-4"
+                            : "translate-x-0",
+                        )}
+                      />
+                    </button>
+                  </TableCell>
                   <TableCell>
                     <div className="flex gap-1">
                       <Button
